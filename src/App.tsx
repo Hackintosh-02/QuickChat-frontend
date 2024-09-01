@@ -5,24 +5,30 @@ import ChatWindow from './components/ChatWindow';
 import Header from './components/Header';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import socket from './socket';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeUsers, setActiveUsers] = useState<string[]>([]);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    // console.log("Checking authentication...");
-    // console.log("User ID in localStorage:", userId);
 
     if (userId) {
       setIsAuthenticated(true);
-      // console.log("User is authenticated");
     } else {
       setIsAuthenticated(false);
-      // console.log("User is not authenticated");
     }
     setLoading(false);
+
+    socket.on('activeUsers', (activeUsersList) => {
+      console.log('Received active users:', activeUsersList); // Add this to debug
+      setActiveUsers(activeUsersList);
+    });
+    return () => {
+      socket.off('activeUsers');
+    };
   }, []);
 
   const handleAuthentication = (authStatus: boolean) => {
@@ -37,7 +43,7 @@ const App: React.FC = () => {
     <Router>
       <div className="flex flex-col h-screen">
         {isAuthenticated && <Header />}
-        <div className="flex flex-1">
+        <div className="flex justify-center">
           <Routes>
             <Route path="/login" element={<Login onLogin={handleAuthentication} />} />
             <Route path="/signup" element={<Signup />} />
@@ -47,12 +53,12 @@ const App: React.FC = () => {
                   path="/chat/:userId"
                   element={
                     <div className="flex flex-1">
-                      <Sidebar />
-                      <ChatWindow />
+                      <Sidebar isSidebarOpen={true} setIsSidebarOpen={() => { }} />
+                      <ChatWindow activeUsers={activeUsers} />
                     </div>
                   }
                 />
-                <Route path="/chat" element={<Sidebar />} />
+                <Route path="/chat" element={<Sidebar isSidebarOpen={true} setIsSidebarOpen={() => { }} />} />
                 <Route path="/" element={<Navigate to="/chat" />} />
               </>
             ) : (

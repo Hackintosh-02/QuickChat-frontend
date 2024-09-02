@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import socket from '../socket';
 
@@ -18,12 +18,12 @@ interface ChatWindowProps {
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ activeUsers }) => {
-    // console.log(activeUsers);
     const { userId } = useParams<{ userId: string }>();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState<string>('');
     const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         socket.on('newMessage', (message) => {
@@ -94,6 +94,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ activeUsers }) => {
         }
     }, [userId]);
 
+    useEffect(() => {
+        // Scroll to the bottom when messages change
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
+
     const sendMessage = async () => {
         if (!newMessage.trim()) return;
 
@@ -153,6 +160,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ activeUsers }) => {
                         {msg.message}
                     </div>
                 ))}
+                <div ref={messagesEndRef} />
             </div>
             <div className="flex">
                 <input
